@@ -9,6 +9,10 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
 
+    env:
+      AWS_REGION: eu-north-1
+      TF_VAR_project_name: order-system-${{ github.run_id }} # unique per run
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -28,25 +32,25 @@ jobs:
       - name: AWS Cleanup (force delete old resources)
         run: |
           set -e
-          echo "Detaching and deleting old IAM role and S3 bucket if they exist..."
+          echo "Full cleanup of old IAM role and S3 bucket..."
 
           export AWS_DEFAULT_REGION=eu-north-1
           export AWS_REGION=eu-north-1
 
-          # IAM cleanup
-          aws iam detach-role-policy \
-            --role-name order-system-lambda-role \
-            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole 2>/dev/null || true
-          aws iam delete-role --role-name order-system-lambda-role 2>/dev/null || true
+          # Detach all IAM policies
+          if aws iam get-role --role-name order-system-lambda-role 2>/dev/null; then
+            echo "Detaching IAM policies..."
+            aws iam list-attached-role-policies --role-name order-system-lambda-role \
+              --query 'AttachedPolicies[*].PolicyArn' --output text | \
+              xargs -n1 -r aws iam detach-role-policy --role-name order-system-lambda-role --policy-arn
+            aws iam delete-role --role-name order-system-lambda-role --no-cli-pager || true
+          fi
 
-          # S3 cleanup
+          # Empty and remove S3 bucket
           if aws s3 ls "s3://order-system-logs" 2>/dev/null; then
-            echo "Deleting all objects in S3 bucket..."
+            echo "Emptying and deleting S3 bucket..."
             aws s3 rm "s3://order-system-logs" --recursive || true
-            echo "Removing bucket..."
             aws s3 rb "s3://order-system-logs" --force || true
-          else
-            echo "No existing bucket found."
           fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
