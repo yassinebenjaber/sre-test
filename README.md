@@ -19,7 +19,7 @@ The system was tested by sending a POST request to the deployed API Gateway endp
 The pipeline successfully created the S3 bucket for storing logs.
 
 <img width="1037" height="542" alt="s3 created" src="https://github.com/user-attachments/assets/b1100489-7e0a-4a39-873e-79cf3fd3a584" />
-*(Image: AWS Console showing the S3 log bucket)*
+
 
 **2. Local `curl` Test**
 
@@ -41,3 +41,4 @@ This is a foundational project. It could be expanded by:
 * **Remote State**: Implementing a **Terraform remote backend** (using S3 and DynamoDB) for better state management and team collaboration.
 * **Monitoring**: Adding **CloudWatch Alarms** to get alerts for failed Lambda executions or messages in the SQS Dead-Letter Queue (DLQ).
 * **Security**: Integrating security scanning tools like `tfsec` or `Trivy` into the CI/CD pipeline.
+
