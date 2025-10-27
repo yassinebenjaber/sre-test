@@ -1,12 +1,9 @@
-# Simple AWS Order System
-This is a student project using Terraform to connect two AWS Lambdas with an SQS queue.
+# AWS Order System (Terraform + GitHub Actions)
 
-- Lambda1 sends messages to the queue
-- Lambda2 reads from it and logs to CloudWatch
+This project deploys a simple **Order Processing System** using Terraform and GitHub Actions.
 
-Run:
-terraform init
-terraform apply
-
-Then test with curl.
-# retry
+## Architecture
+- **API Gateway** → triggers → **Lambda (Add Order)**
+- **Add Order Lambda** → sends message → **SQS Queue**
+- **SQS Queue** → triggers → **Lambda (Process Order)**
+- Both Lambdas log events → **S3 bucket**
