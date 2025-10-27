@@ -11,12 +11,15 @@ provider "aws" {
   region = "eu-north-1"
 }
 
-# Generate unique suffix per deployment (based on timestamp)
-locals {
-  timestamp_suffix = formatdate("YYYYMMDDHHmmss", timestamp())
-}
+# Optional: keep for reference only, not for default assignment
+# locals can’t be used as variable defaults
+# locals {
+#   timestamp_suffix = formatdate("YYYYMMDDHHmmss", timestamp())
+# }
 
+# The suffix will be passed from GitHub Actions via -var="suffix=..."
 variable "suffix" {
-  description = "Unique identifier for resources (e.g., timestamp or GitHub run ID)"
-  default     = local.timestamp_suffix
+  description = "Unique identifier for this deployment (e.g., GitHub run ID or timestamp)"
+  type        = string
+  default     = "" # empty by default; overridden in pipeline
 }
