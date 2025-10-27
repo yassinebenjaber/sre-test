@@ -3,21 +3,31 @@ import json
 import boto3
 import datetime
 
-# Initialize AWS clients once (reuse connection)
+# Initialize AWS clients once per container
 sqs = boto3.client("sqs")
 s3 = boto3.client("s3")
 
-QUEUE_URL = os.environ["QUEUE_URL"]
-LOG_BUCKET = os.environ["LOG_BUCKET"]
+# Fetch environment variables (Terraform injects these)
+QUEUE_URL = os.environ.get("QUEUE_URL")
+LOG_BUCKET = os.environ.get("LOG_BUCKET")
 
 def lambda_handler(event, context):
     try:
-        # Parse request body from API Gateway
-        body = json.loads(event.get("body", "{}"))
-        order_id = body.get("id", "unknown")
+        if not QUEUE_URL or not LOG_BUCKET:
+            raise ValueError("Missing QUEUE_URL or LOG_BUCKET environment variable")
+
+        # Parse JSON body safely
+        body = event.get("body")
+        if not body:
+            raise ValueError("Empty request body")
+
+        data = json.loads(body)
+        order_id = data.get("id")
+        if not order_id:
+            raise ValueError("Missing 'id' in request body")
 
         # Send message to SQS
-        response = sqs.send_message(
+        sqs_response = sqs.send_message(
             QueueUrl=QUEUE_URL,
             MessageBody=json.dumps({
                 "order_id": order_id,
@@ -25,28 +35,30 @@ def lambda_handler(event, context):
             })
         )
 
-        # Log to S3
-        log_data = {
+        # Create structured log entry
+        log_entry = {
             "order_id": order_id,
-            "request_id": context.aws_request_id,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
-            "sqs_message_id": response.get("MessageId")
+            "sqs_message_id": sqs_response.get("MessageId"),
+            "lambda_request_id": context.aws_request_id,
+            "timestamp": datetime.datetime.utcnow().isoformat()
         }
-        key = f"logs/{order_id}-{context.aws_request_id}.json"
+
+        # Write log entry to S3
+        log_key = f"logs/{order_id}-{context.aws_request_id}.json"
         s3.put_object(
             Bucket=LOG_BUCKET,
-            Key=key,
-            Body=json.dumps(log_data).encode("utf-8"),
+            Key=log_key,
+            Body=json.dumps(log_entry),
             ContentType="application/json"
         )
 
-        print(f"Logged order {order_id} to S3 and sent to SQS.")
+        print(f"Order {order_id} logged to {LOG_BUCKET}/{log_key}")
 
         return {
             "statusCode": 200,
             "body": json.dumps({
-                "message": f"Order {order_id} received and logged.",
-                "sqs_message_id": response.get("MessageId")
+                "message": f"Order {order_id} received and logged",
+                "sqs_message_id": sqs_response.get("MessageId")
             })
         }
 
