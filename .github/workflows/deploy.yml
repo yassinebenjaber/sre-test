@@ -34,6 +34,10 @@ jobs:
       - name: Terraform Plan
         run: terraform plan -input=false
 
+      - name: Terraform Destroy (cleanup previous)
+        if: github.ref == 'refs/heads/main'
+        run: terraform destroy -auto-approve -input=false || true
+
       - name: Terraform Apply
         if: github.ref == 'refs/heads/main'
         run: terraform apply -auto-approve -input=false
