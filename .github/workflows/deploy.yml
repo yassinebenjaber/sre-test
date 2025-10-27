@@ -25,30 +25,22 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
 
-      - name: Ensure Terraform state bucket exists
+      - name: Ensure Terraform S3 backend bucket exists
         run: |
           BUCKET_NAME="order-system-terraform-state"
-          REGION="eu-north-1"
-
           echo "Checking if S3 bucket $BUCKET_NAME exists..."
-          if aws s3api head-bucket --bucket "$BUCKET_NAME" --region "$REGION" >/dev/null 2>&1; then
-            echo "Bucket already exists."
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket $BUCKET_NAME already exists."
           else
-            echo "Creating S3 bucket $BUCKET_NAME..."
-            aws s3api create-bucket \
-              --bucket "$BUCKET_NAME" \
-              --region "$REGION" \
-              --create-bucket-configuration LocationConstraint="$REGION"
-            aws s3api put-bucket-versioning \
-              --bucket "$BUCKET_NAME" \
-              --versioning-configuration Status=Enabled \
-              --region "$REGION"
-            echo "Bucket $BUCKET_NAME created and versioning enabled."
+            echo "Bucket not found. Creating..."
+            aws s3api create-bucket --bucket "$BUCKET_NAME" --region eu-north-1 --create-bucket-configuration LocationConstraint=eu-north-1
+            aws s3api put-bucket-encryption --bucket "$BUCKET_NAME" \
+              --server-side-encryption-configuration '{"Rules":[{"ApplyServerSideEncryptionByDefault":{"SSEAlgorithm":"AES256"}}]}'
           fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_DEFAULT_REGION: eu-north-1
+          AWS_REGION: eu-north-1
 
       - name: Build Lambda packages
         run: |
