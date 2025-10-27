@@ -9,3 +9,4 @@ terraform init
 terraform apply
 
 Then test with curl.
+# retry
