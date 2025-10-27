@@ -28,24 +28,27 @@ jobs:
       - name: Ensure Terraform state bucket exists
         run: |
           BUCKET_NAME="order-system-terraform-state"
+          REGION="eu-north-1"
+
           echo "Checking if S3 bucket $BUCKET_NAME exists..."
-          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" --region "$REGION" >/dev/null 2>&1; then
             echo "Bucket already exists."
           else
             echo "Creating S3 bucket $BUCKET_NAME..."
             aws s3api create-bucket \
               --bucket "$BUCKET_NAME" \
-              --region eu-north-1 \
-              --create-bucket-configuration LocationConstraint=eu-north-1
+              --region "$REGION" \
+              --create-bucket-configuration LocationConstraint="$REGION"
             aws s3api put-bucket-versioning \
               --bucket "$BUCKET_NAME" \
-              --versioning-configuration Status=Enabled
+              --versioning-configuration Status=Enabled \
+              --region "$REGION"
             echo "Bucket $BUCKET_NAME created and versioning enabled."
           fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: eu-north-1
+          AWS_DEFAULT_REGION: eu-north-1
 
       - name: Build Lambda packages
         run: |
@@ -56,9 +59,7 @@ jobs:
           ls -l lambda/
 
       - name: Terraform Init
-        run: terraform init -backend-config="bucket=order-system-terraform-state" \
-                            -backend-config="key=state/terraform-${{ github.run_id }}.tfstate" \
-                            -backend-config="region=eu-north-1"
+        run: terraform init
 
       - name: Terraform Validate
         run: terraform validate
