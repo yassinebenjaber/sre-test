@@ -1,11 +1,11 @@
 # Lambda that sends messages to SQS
 resource "aws_lambda_function" "add_order" {
-  function_name = "${var.project_name}-add"
+  function_name = "${var.project_name}-add-${var.suffix}"
   runtime       = "python3.12"
   handler       = "main.lambda_handler"
   role          = aws_iam_role.lambda_role.arn
   filename      = "lambda/add_order.zip"
-  timeout       = 10 # prevent premature timeout while sending or logging
+  timeout       = 10
 
   environment {
     variables = {
@@ -22,7 +22,7 @@ resource "aws_lambda_function" "add_order" {
 
 # Lambda that processes messages from SQS
 resource "aws_lambda_function" "process_order" {
-  function_name = "${var.project_name}-process"
+  function_name = "${var.project_name}-process-${var.suffix}"
   runtime       = "python3.12"
   handler       = "main.lambda_handler"
   role          = aws_iam_role.lambda_role.arn

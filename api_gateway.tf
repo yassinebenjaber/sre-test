@@ -1,6 +1,6 @@
 # Simple HTTP API for sending orders
 resource "aws_apigatewayv2_api" "api" {
-  name          = "${var.project_name}-api"
+  name          = "${var.project_name}-api-${var.suffix}"
   protocol_type = "HTTP"
 }
 
@@ -24,7 +24,7 @@ resource "aws_apigatewayv2_route" "post_orders" {
 
 # Allow API Gateway to invoke the Lambda
 resource "aws_lambda_permission" "api_permission" {
-  statement_id  = "AllowAPIGatewayInvoke"
+  statement_id  = "AllowAPIGatewayInvoke-${var.suffix}"
   action        = "lambda:InvokeFunction"
   function_name = aws_lambda_function.add_order.function_name
   principal     = "apigateway.amazonaws.com"
