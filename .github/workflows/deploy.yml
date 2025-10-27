@@ -27,6 +27,10 @@ jobs:
 
       - name: AWS Cleanup (force delete old resources)
         run: |
+          echo "Detaching and deleting old IAM role and S3 bucket if they exist..."
+          aws iam detach-role-policy \
+            --role-name order-system-lambda-role \
+            --policy-arn arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole || true
           aws iam delete-role --role-name order-system-lambda-role || true
           aws s3 rb s3://order-system-logs --force || true
         env:
