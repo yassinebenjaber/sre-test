@@ -25,6 +25,28 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: eu-north-1
 
+      - name: Ensure Terraform state bucket exists
+        run: |
+          BUCKET_NAME="order-system-terraform-state"
+          echo "Checking if S3 bucket $BUCKET_NAME exists..."
+          if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
+            echo "Bucket already exists."
+          else
+            echo "Creating S3 bucket $BUCKET_NAME..."
+            aws s3api create-bucket \
+              --bucket "$BUCKET_NAME" \
+              --region eu-north-1 \
+              --create-bucket-configuration LocationConstraint=eu-north-1
+            aws s3api put-bucket-versioning \
+              --bucket "$BUCKET_NAME" \
+              --versioning-configuration Status=Enabled
+            echo "Bucket $BUCKET_NAME created and versioning enabled."
+          fi
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: eu-north-1
+
       - name: Build Lambda packages
         run: |
           echo "Zipping Lambda functions..."
@@ -34,7 +56,9 @@ jobs:
           ls -l lambda/
 
       - name: Terraform Init
-        run: terraform init
+        run: terraform init -backend-config="bucket=order-system-terraform-state" \
+                            -backend-config="key=state/terraform-${{ github.run_id }}.tfstate" \
+                            -backend-config="region=eu-north-1"
 
       - name: Terraform Validate
         run: terraform validate
