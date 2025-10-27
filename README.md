@@ -27,7 +27,7 @@ The pipeline successfully created the S3 bucket for storing logs.
 
 **3. Log Stored in S3**
 
-The "Process Order" Lambda successfully processed the order from the SQS queue and stored the corresponding log file in the S3 bucket.
+The Lambdas successfully processed the order from the SQS queue and stored the corresponding log file in the S3 bucket.
 
 <img width="1543" height="719" alt="log" src="https://github.com/user-attachments/assets/c9aa2568-724f-4506-9e38-b16b90c07a2d" />
 
@@ -41,4 +41,5 @@ This is a foundational project. It could be expanded by:
 * **Remote State**: Implementing a **Terraform remote backend** (using S3 and DynamoDB) for better state management and team collaboration.
 * **Monitoring**: Adding **CloudWatch Alarms** to get alerts for failed Lambda executions or messages in the SQS Dead-Letter Queue (DLQ).
 * **Security**: Integrating security scanning tools like `tfsec` or `Trivy` into the CI/CD pipeline.
+
 
